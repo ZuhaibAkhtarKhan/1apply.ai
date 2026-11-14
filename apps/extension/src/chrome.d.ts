@@ -13,7 +13,10 @@ declare const chrome: {
         ) => boolean | void,
       ) => void;
     };
-    sendMessage: (message: unknown, response?: (value: unknown) => void) => void;
+    sendMessage: {
+      (message: unknown): Promise<unknown>;
+      (message: unknown, response: (value: unknown) => void): void;
+    };
     lastError?: { message: string };
     openOptionsPage: () => void;
   };
@@ -60,6 +63,7 @@ declare const chrome: {
   };
   alarms: {
     create: (name: string, alarmInfo: { periodInMinutes?: number; delayInMinutes?: number }) => void;
+    clear: (name: string) => Promise<boolean>;
     onAlarm: {
       addListener: (callback: (alarm: { name: string }) => void) => void;
     };
@@ -68,6 +72,6 @@ declare const chrome: {
 
 declare namespace chrome {
   namespace tabs {
-    type Tab = { id?: number; url?: string; title?: string; status?: string };
+    type Tab = { id?: number; url?: string; pendingUrl?: string; title?: string; status?: string };
   }
 }

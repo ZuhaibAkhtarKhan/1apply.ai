@@ -155,7 +155,7 @@ describe("kit status", () => {
       displayName: "Saadia",
       university: "",
       educationSummary: "",
-      documents: [{ id: "r1", type: "resume", label: "CV", currentVersionId: "v1" }],
+      documents: [{ type: "resume", label: "CV" }],
     });
     expect(status.ready).toBe(true);
     expect(status.missing).toEqual(["university", "education", CNIC_PHARM_B_LABEL]);

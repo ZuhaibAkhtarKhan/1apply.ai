@@ -282,12 +282,31 @@ export function needsYouItemDedupeKey(item: Pick<NeedsYouItem, "applicationId" |
  */
 export function dedupeNeedsYouItems(items: NeedsYouItem[]): NeedsYouItem[] {
   const bestByKey = new Map<string, NeedsYouItem>();
+  // Eligibility cards are keyed by requirement id, so also index every card by its
+  // normalized title: an eligibility card and a field_mapping with the same label merge.
+  const slotByKey = new Map<string, string>();
+  const identityOf = (entry: NeedsYouItem) => entry.payload.requirementId ?? entry.payload.eligibilityId ?? null;
 
   for (const item of items) {
     if (!isNeedsYouApplicantQuestion(item.kind)) continue;
     const titleKey = normalizeNeedsYouDedupeKey(item.title);
     if (!titleKey && !item.payload.eligibilityId && !item.payload.requirementId) continue;
-    const key = needsYouItemDedupeKey(item);
+    const primaryKey = needsYouItemDedupeKey(item);
+    const titleAlias = titleKey ? `${item.applicationId}:${titleKey}` : null;
+
+    let key = slotByKey.get(primaryKey);
+    if (!key && titleAlias) {
+      const aliasSlot = slotByKey.get(titleAlias);
+      const aliasItem = aliasSlot ? bestByKey.get(aliasSlot) : undefined;
+      const itemIdentity = identityOf(item);
+      const aliasIdentity = aliasItem ? identityOf(aliasItem) : null;
+      // Two distinct requirements that happen to share wording stay separate.
+      if (aliasSlot && !(itemIdentity && aliasIdentity && itemIdentity !== aliasIdentity)) key = aliasSlot;
+    }
+    key ??= primaryKey;
+    if (!slotByKey.has(primaryKey)) slotByKey.set(primaryKey, key);
+    if (titleAlias && !slotByKey.has(titleAlias)) slotByKey.set(titleAlias, key);
+
     const existing = bestByKey.get(key);
     if (!existing) {
       bestByKey.set(key, item);

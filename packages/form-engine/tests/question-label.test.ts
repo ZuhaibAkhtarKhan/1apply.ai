@@ -2,10 +2,8 @@ import { describe, expect, it } from "vitest";
 import { Window } from "happy-dom";
 
 import {
-  humanizeFieldToken,
   humanQuestionLabel,
   isFormBuilderChromeLabel,
-  isMachineFieldToken,
   isNoiseFormField,
   mapFields,
   stripFormSyntaxDecorators,

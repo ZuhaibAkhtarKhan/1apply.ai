@@ -70,6 +70,14 @@ describe("needs-you question dedupe", () => {
     expect(out[0]!.payload.mappingId).toBe("m1");
   });
 
+  it("keeps distinct eligibility requirements apart even when worded the same", () => {
+    const out = dedupeNeedsYouItems([
+      item({ id: "elig:1", kind: "eligibility", title: "Confirm you are eligible", payload: { eligibilityId: "e1" } }),
+      item({ id: "elig:2", kind: "eligibility", title: "Confirm you are eligible", payload: { eligibilityId: "e2" } }),
+    ]);
+    expect(out).toHaveLength(2);
+  });
+
   it("does not collapse different questions", () => {
     const out = dedupeNeedsYouItems([
       item({ id: "a", kind: "answer", title: "Why this program?", inputType: "textarea" }),
