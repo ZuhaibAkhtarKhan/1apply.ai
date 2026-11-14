@@ -33,110 +33,117 @@ export default async function SettingsPage({
         body="Export your data, connect the browser extension, or delete Application Memory. API keys never ship in this browser session."
       />
       <FlashBanner notice={notice} error={error} />
-      <div className="mt-8 grid max-w-2xl gap-6">
-        <Card className="p-6">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h2 className="text-base font-medium">Session</h2>
-              <p className="mt-2 text-sm">
-                Signed in as <strong>{profile?.email}</strong>
-              </p>
+      <div className="mt-8 grid gap-6 lg:grid-cols-2 lg:items-start">
+        <div className="grid gap-6">
+          <Card className="p-6">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h2 className="text-base font-medium">Session</h2>
+                <p className="mt-2 text-sm">
+                  Signed in as <strong>{profile?.email}</strong>
+                </p>
+              </div>
+              <StatusPill tone={aiReady ? "mint" : "muted"}>
+                {aiReady ? `${aiStatus.chatProvider} ready` : "Not configured"}
+              </StatusPill>
             </div>
-            <StatusPill tone={aiReady ? "mint" : "muted"}>
-              {aiReady ? `${aiStatus.chatProvider} ready` : "Not configured"}
-            </StatusPill>
-          </div>
-          <p className="mt-3 text-sm text-ink-muted">
-            {aiReady
-              ? `Server AI: ${aiStatus.chatProvider} (${aiStatus.chatModel ?? "model"}) in ${aiStatus.mode} mode. Drafts still require verified evidence.`
-              : "Set GROQ_API_KEY for fast demos or OPENAI_API_KEY (Gemini) for extraction + embeddings."}
-          </p>
-          <form action={signOut} className="mt-5">
-            <SubmitButton variant="secondary">
-              Sign out
-            </SubmitButton>
-          </form>
-        </Card>
+            <p className="mt-3 text-sm text-ink-muted">
+              {aiReady
+                ? `Server AI: ${aiStatus.chatProvider} (${aiStatus.chatModel ?? "model"}) in ${aiStatus.mode} mode. Drafts still require verified evidence.`
+                : "Set GROQ_API_KEY for fast demos or OPENAI_API_KEY (Gemini) for extraction + embeddings."}
+            </p>
+            <form action={signOut} className="mt-5">
+              <SubmitButton variant="secondary">
+                Sign out
+              </SubmitButton>
+            </form>
+          </Card>
 
-        <Card className="p-6">
-          <h2 className="text-base font-medium">Timezone</h2>
-          <p className="mt-2 text-sm text-ink-muted">
-            Used for deadline labels and in-app reminders when an application does not set its own timezone.
-          </p>
-          <form action={updateTimezone} className="mt-4 grid gap-3">
-            <Field label="IANA timezone" htmlFor="account-timezone">
-              <Input
-                id="account-timezone"
-                name="timezone"
-                defaultValue={profile?.timezone ?? ""}
-                placeholder="Asia/Karachi"
-              />
-            </Field>
-            <SubmitButton variant="secondary">
-              Save timezone
-            </SubmitButton>
-          </form>
-        </Card>
+          <Card className="p-6">
+            <h2 className="text-base font-medium">Timezone</h2>
+            <p className="mt-2 text-sm text-ink-muted">
+              Used for deadline labels and in-app reminders when an application does not set its own timezone.
+            </p>
+            <form action={updateTimezone} className="mt-4 grid gap-3">
+              <Field label="IANA timezone" htmlFor="account-timezone">
+                <Input
+                  id="account-timezone"
+                  name="timezone"
+                  defaultValue={profile?.timezone ?? ""}
+                  placeholder="Asia/Karachi"
+                />
+              </Field>
+              <SubmitButton variant="secondary">
+                Save timezone
+              </SubmitButton>
+            </form>
+          </Card>
 
-        <Card className="p-6" data-tour="settings-freeze">
-          <h2 className="text-base font-medium">Auto-submit if I don’t respond</h2>
-          <p className="mt-2 text-sm text-ink-muted">
-            When you add a form URL, 1-Apply fills every form page as early as it can from Need You and your kit.
-            About 2 hours before the deadline (or sooner if you set the deadline late), you get a review
-            email. Whether or not you edit, the Chrome extension opens the form in your signed-in browser
-            and Submits about 2 hours before the deadline. Keep Chrome open and stay signed into
-            the host site (Google Forms, Jotform, etc.). If it is still not submitted after the deadline,
-            1-Apply tries once more and notifies you. CAPTCHA, signature, and payment still need you.
-          </p>
-          <form action={updatePrepareAndSend} className="mt-4 grid gap-3">
-            <label className="flex items-start gap-3 text-sm">
-              <input
-                type="checkbox"
-                name="prepareAndSendIfSilent"
-                defaultChecked={prefs.prepareAndSendIfSilent}
-                className="mt-1"
-              />
-              <span>Auto-submit before the deadline if I stay silent (runs in my browser via the extension).</span>
-            </label>
-            <SubmitButton variant="secondary">
-              Save send preference
-            </SubmitButton>
-          </form>
-        </Card>
-
-        <Card className="p-6">
-          <h2 className="text-base font-medium">Browser extension</h2>
-          <p className="mt-2 text-sm text-ink-muted">
-            Connect Gmail or Calendar from{" "}
-            <a className="underline" href="/app/integrations">
-              Integrations
+          <Card className="p-6">
+            <h2 className="text-base font-medium">Export</h2>
+            <p className="mt-2 text-sm text-ink-muted">
+              Download profile facts, evidence, applications, approved answers, and submission snapshots as JSON.
+            </p>
+            <a className="mt-4 inline-flex" href="/api/account/export">
+              <Button type="button" variant="secondary">
+                Download export
+              </Button>
             </a>
-            . Keep the extension installed and connected — it fills from memory and executes deadline
-            Submit jobs in your signed-in browser. You can also tap “Fill from memory” manually on an open form.
-          </p>
-          <ExtensionConnectCard appUrl={appUrl} />
-        </Card>
+          </Card>
+        </div>
 
-        <Card className="p-6">
-          <h2 className="text-base font-medium">Export</h2>
-          <p className="mt-2 text-sm text-ink-muted">
-            Download profile facts, evidence, applications, approved answers, and submission snapshots as JSON.
-          </p>
-          <a className="mt-4 inline-flex" href="/api/account/export">
-            <Button type="button" variant="secondary">
-              Download export
-            </Button>
-          </a>
-        </Card>
+        <div className="grid gap-6">
+          <Card className="p-6" data-tour="settings-freeze">
+            <h2 className="text-base font-medium">Auto-submit if I don’t respond</h2>
+            <p className="mt-2 text-sm text-ink-muted">
+              When you add a form URL, 1-Apply fills every form page as early as it can from Need You and your kit.
+              About 2 hours before the deadline (or sooner if you set the deadline late), you get a review
+              email. Whether or not you edit, the Chrome extension opens the form in your signed-in browser
+              and Submits about 2 hours before the deadline. Keep Chrome open and stay signed into
+              the host site (Google Forms, Jotform, etc.). If it is still not submitted after the deadline,
+              1-Apply tries once more and notifies you. CAPTCHA, signature, and payment still need you.
+            </p>
+            <form action={updatePrepareAndSend} className="mt-4 grid gap-3">
+              <label className="flex items-start gap-3 text-sm">
+                <input
+                  type="checkbox"
+                  name="prepareAndSendIfSilent"
+                  defaultChecked={prefs.prepareAndSendIfSilent}
+                  className="mt-1"
+                />
+                <span>Auto-submit before the deadline if I stay silent (runs in my browser via the extension).</span>
+              </label>
+              <SubmitButton variant="secondary">
+                Save send preference
+              </SubmitButton>
+            </form>
+          </Card>
 
-        <Card className="p-6">
+          <Card className="p-6">
+            <h2 className="text-base font-medium">Browser extension</h2>
+            <p className="mt-2 text-sm text-ink-muted">
+              Connect Gmail or Calendar from{" "}
+              <a className="underline" href="/app/integrations">
+                Integrations
+              </a>
+              . Keep the extension installed and connected — it fills from memory and executes deadline
+              Submit jobs in your signed-in browser. You can also tap “Fill from memory” manually on an open form.
+            </p>
+            <ExtensionConnectCard appUrl={appUrl} />
+          </Card>
+        </div>
+
+        <Card className="p-6 lg:col-span-2">
           <h2 className="text-base font-medium">Delete Application Memory</h2>
-          <p className="mt-2 text-sm text-ink-muted">
+          <p className="mt-2 max-w-3xl text-sm text-ink-muted">
             This deletes your profile and cascaded application data. Frozen snapshots are removed with the account. Type
             your email to confirm. Apply this SQL in Supabase if deletion is blocked:{" "}
             <code>20260819180000_account_deletion.sql</code>. Auth-user removal is not performed here.
           </p>
-          <form action={requestAccountDeletion} className="mt-4 grid gap-3">
+          <form
+            action={requestAccountDeletion}
+            className="mt-4 grid max-w-xl gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
+          >
             <Input name="confirm" type="email" required placeholder={profile?.email ?? "you@example.com"} aria-label="Confirm email" />
             <SubmitButton variant="secondary">
               Delete my data
