@@ -735,7 +735,7 @@ async function runPlaywrightHostSession(input: {
         // LLM planning can take long enough for Google Forms to re-render and drop stamps.
         await harvestGoogleListboxOptions(page);
         const recapture = await evaluateFormDom<CapturedFormPage>(page, "capture");
-        let liveCapture = recapture.fields.length > 0 ? recapture : capture;
+        const liveCapture = recapture.fields.length > 0 ? recapture : capture;
         let livePlan = plan;
         const originalIds = new Set(capture.fields.map((field) => field.fieldId));
         const recaptureHasNewFields = liveCapture.fields.some((field) => !originalIds.has(field.fieldId));
@@ -790,7 +790,7 @@ async function runPlaywrightHostSession(input: {
           const empty = await plannedHostFieldsStillEmpty(page, entries);
           return empty.filter((id) => requiredIds.has(id));
         };
-        let blockedIds = await requiredEmptyOnHost();
+        const blockedIds = await requiredEmptyOnHost();
         if (blockedIds.length > 0) {
           totalFilled += await applyFillPlanToHostPage({
             page,

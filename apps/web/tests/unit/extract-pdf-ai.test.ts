@@ -9,7 +9,7 @@ describe("extractPdfTextWithAi", () => {
   it("returns structured text from the AI API", async () => {
     vi.stubEnv("OPENAI_API_KEY", "test-key");
     vi.stubEnv("OPENAI_BASE_URL", "https://api.openai.com/v1");
-    const fetchMock = vi.fn(async () =>
+    const fetchMock = vi.fn(async (..._args: Parameters<typeof fetch>) =>
       Response.json({
         choices: [{ message: { content: "Jane Doe\njane@example.com\n\nExperience\n- Built APIs" } }],
       }),
@@ -30,7 +30,7 @@ describe("extractPdfTextWithAi", () => {
     vi.stubEnv("OPENAI_API_KEY", "test-key");
     vi.stubEnv("OPENAI_BASE_URL", "https://generativelanguage.googleapis.com/v1beta/openai");
     vi.stubEnv("OPENAI_MODEL", "gemini-3.6-flash");
-    const fetchMock = vi.fn(async () =>
+    const fetchMock = vi.fn(async (..._args: Parameters<typeof fetch>) =>
       Response.json({
         candidates: [{ content: { parts: [{ text: "Jane Doe\n\nExperience\n- Built APIs" }] } }],
       }),

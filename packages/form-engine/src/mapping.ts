@@ -172,6 +172,12 @@ const AI_ANSWERABLE =
 const STRUCTURED_MEMORY =
   /\b(phone|whatsapp|mobile|telephone|cnic|nic\b|college|university|campus|course|major|minor|programme|gpa|github|linkedin|email|e-mail|graduation|year of study|class standing|state\/ut|portfolio)\b/i;
 
+// A "name" field that asks for someone else's name (or a name variant) must not
+// confidently receive the applicant's full name. Checked against the field's own
+// label/placeholder/aria only — nearby section text is too noisy.
+const NOT_APPLICANT_FULL_NAME =
+  /\b(referee|reference|recommender|emergency|contact person|next of kin|parent|guardian|father|mother|spouse|manager|supervisor|mentor|on card|card ?holder|account holder|preferred|nick)/i;
+
 const LINK_FIELD =
   /\b(link|url|website|portfolio|linkedin|github|drive|sample|published|personal site)\b/i;
 
@@ -915,6 +921,8 @@ export function mapField(field: DetectedField, catalog: MemoryValue[]): FieldMap
     const score = confidenceFor(signals, rule.aliases);
     if (score >= rule.minConfidence && (!best || score > best.score)) best = { rule, score };
   }
+  const notApplicantName = NOT_APPLICANT_FULL_NAME.test(`${field.label} ${field.placeholder} ${field.ariaLabel}`);
+  if (best?.rule.path === "Profile → Full name" && notApplicantName) best = null;
 
   // Link / sample URL fields: always propose LinkedIn / Portfolio / GitHub from memory.
   if (isLinkStyleField(signals) && !sensitive) {
@@ -949,7 +957,7 @@ export function mapField(field: DetectedField, catalog: MemoryValue[]): FieldMap
   const ambiguousName = /\bname\b/.test(signals) && !/(full|first|last|given|family|user|university|school|company)/.test(signals);
   // "Full Name" and a plain "Name" label are unambiguous — they mean the display name.
   const isFullName = /\bfull\s*name\b/i.test(signals) || /^name$/i.test((field.label ?? "").trim());
-  if (!best && ambiguousName && !isFullName) {
+  if (!best && /\bname\b/.test(signals) && (notApplicantName || (ambiguousName && !isFullName))) {
     const options = toOptions([
       ...memoriesForPath("Profile → Full name", ["name", "full name"], catalog),
       ...memoriesForPath("Profile → First name", ["first name"], catalog),

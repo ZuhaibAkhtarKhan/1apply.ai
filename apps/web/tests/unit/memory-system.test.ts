@@ -12,7 +12,8 @@ const migration = readFileSync(
 );
 
 describe("planDocumentExtraction", () => {
-  it("marks extracted evidence as unverified with source keys", () => {
+  // Extracted resume evidence is auto-verified so it is usable immediately (intentional since 2026-08-27).
+  it("marks extracted evidence as verified with source keys", () => {
     const plan = planDocumentExtraction(
       {
         displayName: "Ada Lovelace",
@@ -34,9 +35,11 @@ describe("planDocumentExtraction", () => {
       [],
     );
 
-    expect(plan.evidence[0]?.verificationStatus).toBe("unverified");
+    expect(plan.evidence[0]?.verificationStatus).toBe("verified");
     expect(plan.evidence[0]?.extractionStatus).toBe("extracted");
-    expect(plan.evidence[0]?.factKey).toContain("end-year");
+    // Evidence is keyed by title so an end date doesn't create a second row; the year is its own fact.
+    expect(plan.evidence[0]?.factKey).toContain(":title");
+    expect(plan.facts.some((fact) => fact.factKey.includes("end-year"))).toBe(true);
     expect(plan.facts.some((fact) => fact.value.includes("2027"))).toBe(true);
   });
 

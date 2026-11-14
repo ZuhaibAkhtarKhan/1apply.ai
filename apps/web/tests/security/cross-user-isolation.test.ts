@@ -158,6 +158,11 @@ describe("cross-user data exposure = 0", () => {
       path.resolve(__dirname, "../../src/services/retrieval.ts"),
       "utf8",
     );
+    // The signed-in profile is now loaded in lib/profile.ts, not workspace/queries.ts.
+    const profileLoader = readFileSync(
+      path.resolve(__dirname, "../../src/lib/profile.ts"),
+      "utf8",
+    );
 
     expect(init).toContain("create policy profiles_select_own");
     expect(init).toContain("create policy documents_select_own");
@@ -167,7 +172,7 @@ describe("cross-user data exposure = 0", () => {
     expect(architecture).toContain("where e.user_id = auth.uid()");
     expect(architecture).not.toContain("using (true)");
 
-    expect(queries).toContain('.eq("id", profile.id)');
+    expect(profileLoader).toContain('.eq("id", user.id)');
     expect(queries).toContain('.eq("user_id", profile.id)');
     expect(queries).toContain('.eq("user_id", user.id)');
     expect(applicationActions).toContain('.eq("user_id", userId)');

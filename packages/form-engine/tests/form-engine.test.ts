@@ -144,8 +144,19 @@ describe("mapping confidence", () => {
     expect(github?.confidence).toBeGreaterThanOrEqual(0.99);
   });
 
-  it("keeps ambiguous name fields at low confidence", () => {
+  it("maps a plain Name field to the full name", () => {
     const document = documentFrom(`<input name="name" placeholder="Name" />`);
+    const [mapping] = mapFields(inventoryFromDocument(document), memory);
+    expect(mapping?.memoryPath).toBe("Profile → Full name");
+    expect(mapping?.confidence).toBeGreaterThanOrEqual(0.9);
+    expect(mapping?.excludedByDefault).toBe(false);
+  });
+
+  it("keeps ambiguous name fields at low confidence", () => {
+    const document = documentFrom(`
+      <label for="pname">Preferred name</label>
+      <input id="pname" name="pname" />
+    `);
     const [mapping] = mapFields(inventoryFromDocument(document), memory);
     expect(mapping?.confidence).toBeLessThan(0.5);
     expect(mapping?.excludedByDefault).toBe(true);

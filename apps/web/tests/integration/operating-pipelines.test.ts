@@ -91,7 +91,8 @@ describe("Document → Extraction → Evidence → Memory", () => {
       ],
     );
     expect(plan.evidence[0]?.kind).toBe("education");
-    expect(plan.evidence[0]?.verificationStatus).toBe("unverified");
+    // Extracted resume evidence is auto-verified (intentional since 2026-08-27).
+    expect(plan.evidence[0]?.verificationStatus).toBe("verified");
     expect(plan.skills).toContain("Python");
   });
 });
