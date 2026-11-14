@@ -60,7 +60,7 @@ jobs:
 
   deploy:
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -86,7 +86,8 @@ jobs:
           username: ${{ vars.DEPLOY_USER || 'ubuntu' }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           envs: WEB_IMAGE,GHCR_USER,GHCR_TOKEN
-          script_stop: true
+          # No script_stop: it injects an exit-code check after every line, which breaks
+          # multi-line if/else blocks. `set -euo pipefail` below already stops on errors.
           command_timeout: 10m
           script: |
             set -euo pipefail
