@@ -1,0 +1,14 @@
+# Public entrypoint. Caddy obtains and renews the HTTPS certificate automatically.
+# APP_DOMAIN comes from /opt/1apply/.env, e.g. 13-232-10-20.sslip.io (no domain needed)
+# or app.example.com once you own a domain.
+{$APP_DOMAIN} {
+	encode zstd gzip
+
+	# No proxy timeout: resume extraction and AI analysis can run for minutes.
+	reverse_proxy web:3000
+
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		-Server
+	}
+}
