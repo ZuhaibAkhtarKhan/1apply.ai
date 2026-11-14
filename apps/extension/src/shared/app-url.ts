@@ -1,8 +1,18 @@
 export const APP_BASE_URL_STORAGE_KEY = "appBaseUrl";
 
-export const PRODUCTION_APP_BASE_URL = "http://3.108.122.44";
+export const PRODUCTION_APP_BASE_URL = "https://1apply.awssbggiki.app";
 
-const LEGACY_LOCAL_DEFAULTS = new Set(["http://localhost:3000", "http://127.0.0.1:3000"]);
+/**
+ * Stored Options values that are ignored in favour of the build default:
+ * old local dev defaults, and the retired production server (users who saved it
+ * in Options are moved to the new URL automatically).
+ */
+const LEGACY_LOCAL_DEFAULTS = new Set([
+  "http://localhost:3000",
+  "http://127.0.0.1:3000",
+  "http://3.108.122.44",
+  "https://3.108.122.44",
+]);
 
 /** Default at build time; override in extension Options for other deployments. */
 export const DEFAULT_APP_BASE_URL =
