@@ -1,0 +1,41 @@
+# Keep the build context small and secret-free.
+.git
+.github
+**/node_modules
+**/.next
+**/dist
+**/coverage
+**/test-results
+**/playwright-report
+**/*.tsbuildinfo
+
+# Secrets — runtime env comes from docker compose / the host, never the image
+.env
+.env.*
+**/.env
+**/.env.*
+!.env.example
+
+# Not part of the web app image
+artifacts
+lib
+.agents
+.replit
+.replitignore
+.migration-backup
+docs
+deploy
+supabase
+*.md
+!apps/web/**/*.md
+
+# Docker files themselves
+Dockerfile
+docker-compose*.yml
+.dockerignore
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode
+.idea

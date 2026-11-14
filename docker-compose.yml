@@ -1,0 +1,41 @@
+# 1-Apply via Docker Compose.
+#
+#   cp .env.example apps/web/.env.local     # fill in your own values
+#   docker compose --env-file apps/web/.env.local up --build -d
+#
+# `--env-file` feeds NEXT_PUBLIC_* into the image build (they are baked into the browser bundle);
+# `env_file` below passes every variable to the running containers.
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+        # Empty unless you pass --env-file; the app then shows "not configured" on sign-in.
+        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:-}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY:-}
+        NEXT_PUBLIC_EXTENSION_ORIGIN: ${NEXT_PUBLIC_EXTENSION_ORIGIN:-}
+        INSTALL_PLAYWRIGHT_CHROMIUM: ${INSTALL_PLAYWRIGHT_CHROMIUM:-false}
+    image: 1apply-web:latest
+    env_file:
+      - apps/web/.env.local
+    ports:
+      - "${WEB_PORT:-3000}:3000"
+    restart: unless-stopped
+    # Chromium (server host-submit) needs more shared memory than Docker's 64 MB default.
+    shm_size: "256mb"
+
+  cron:
+    image: curlimages/curl:8.11.1
+    depends_on:
+      - web
+    env_file:
+      - apps/web/.env.local
+    environment:
+      APP_INTERNAL_URL: http://web:3000
+    volumes:
+      - ./docker/cron.sh:/cron.sh:ro
+    entrypoint: ["/bin/sh", "/cron.sh"]
+    restart: unless-stopped
