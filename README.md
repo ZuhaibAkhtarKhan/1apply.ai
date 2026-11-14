@@ -33,6 +33,17 @@ cp .env.example apps/web/.env.local
 npm run dev
 ```
 
+### Run with Docker
+
+```bash
+cp .env.example apps/web/.env.local   # fill in your own values (incl. CRON_SECRET)
+docker compose --env-file apps/web/.env.local up --build -d
+```
+
+- `web` serves the app on `http://localhost:3000` (override with `WEB_PORT`). `NEXT_PUBLIC_*` values are baked in at build time, so rebuild after changing them.
+- `cron` replaces the EC2 crontab: `/api/cron/host-submit-worker` every 5 min, `/api/cron/sweep` every 15 min.
+- Server-side Playwright submit needs Chromium in the image: set `INSTALL_PLAYWRIGHT_CHROMIUM=true` (about 500 MB more) and `ENABLE_SERVER_HOST_SUBMIT=true`.
+
 Apply migrations in order:
 
 - `supabase/migrations/20260818000000_init.sql`
