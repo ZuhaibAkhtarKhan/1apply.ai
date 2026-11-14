@@ -17,12 +17,6 @@
 !.env.example
 
 # Not part of the web app image
-artifacts
-lib
-.agents
-.replit
-.replitignore
-.migration-backup
 docs
 deploy
 supabase
