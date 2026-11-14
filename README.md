@@ -35,6 +35,8 @@ npm run dev
 
 ### Run with Docker
 
+Production deployment (EC2 + Docker + HTTPS): see [deploy/README.md](deploy/README.md).
+
 ```bash
 cp .env.example apps/web/.env.local   # fill in your own values (incl. CRON_SECRET)
 docker compose --env-file apps/web/.env.local up --build -d

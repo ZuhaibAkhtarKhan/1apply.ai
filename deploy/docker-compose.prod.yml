@@ -1,0 +1,59 @@
+# Production stack on the EC2 host (lives in /opt/1apply next to .env, Caddyfile and cron.sh).
+# Deployed by .github/workflows/deploy-docker.yml — see deploy/README.md.
+#
+#   cd /opt/1apply && docker compose -f docker-compose.prod.yml up -d
+#
+# .env provides both compose interpolation (WEB_IMAGE, APP_DOMAIN) and the app's runtime env.
+
+name: 1apply
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  web:
+    image: ${WEB_IMAGE:?WEB_IMAGE missing from .env}
+    env_file: .env
+    expose:
+      - "3000"
+    restart: unless-stopped
+    shm_size: "256mb"
+    logging: *logging
+
+  caddy:
+    image: caddy:2.10-alpine
+    depends_on:
+      - web
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN:?APP_DOMAIN missing from .env}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    restart: unless-stopped
+    logging: *logging
+
+  cron:
+    image: curlimages/curl:8.11.1
+    depends_on:
+      - web
+    env_file: .env
+    environment:
+      APP_INTERNAL_URL: http://web:3000
+    volumes:
+      - ./cron.sh:/cron.sh:ro
+    entrypoint: ["/bin/sh", "/cron.sh"]
+    restart: unless-stopped
+    logging: *logging
+
+volumes:
+  # Holds the TLS certificates — keep it across deploys to avoid hitting issuance rate limits.
+  caddy_data:
+  caddy_config:

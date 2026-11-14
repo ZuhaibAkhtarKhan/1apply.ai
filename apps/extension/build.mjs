@@ -1,4 +1,4 @@
-import { copyFileSync, cpSync, mkdirSync } from "node:fs";
+import { copyFileSync, cpSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import * as esbuild from "esbuild";
@@ -29,11 +29,23 @@ await esbuild.build({
   },
 });
 
-for (const file of ["manifest.json", "src/popup/popup.html", "src/popup/popup.css", "src/options/options.html"]) {
-  const from = path.join(root, file);
-  const to = path.join(dist, path.basename(file) === "manifest.json" ? "manifest.json" : path.basename(file));
-  copyFileSync(from, to);
+for (const file of ["src/popup/popup.html", "src/popup/popup.css", "src/options/options.html"]) {
+  copyFileSync(path.join(root, file), path.join(dist, path.basename(file)));
 }
+
+// Grant the configured app origin host access and the same-origin bridge script,
+// so EXTENSION_APP_BASE_URL=https://<host> builds work without editing manifest.json.
+const manifest = JSON.parse(readFileSync(path.join(root, "manifest.json"), "utf8"));
+const appOriginPattern = `${new URL(appBaseUrl).origin}/*`;
+if (!manifest.host_permissions.includes(appOriginPattern)) {
+  manifest.host_permissions.push(appOriginPattern);
+}
+for (const script of manifest.content_scripts ?? []) {
+  if (script.js?.includes("bridge.js") && !script.matches.includes(appOriginPattern)) {
+    script.matches.push(appOriginPattern);
+  }
+}
+writeFileSync(path.join(dist, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`);
 
 cpSync(path.join(root, "icons"), path.join(dist, "icons"), { recursive: true });
 cpSync(path.join(root, "fonts"), path.join(dist, "fonts"), { recursive: true });
