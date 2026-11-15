@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { EMBEDDING_DIMENSIONS, loadAppConfig } from "@/config/env";
-import { logError } from "@/lib/log";
+import { logError, logInfo } from "@/lib/log";
 import {
   AiNotConfiguredError,
   type AiProvider,
@@ -315,10 +315,11 @@ class OpenAiCompatibleProvider implements AiProvider {
     jsonMode: boolean,
     schemaName?: string,
     attempt = 0,
+    useGemini = false,
   ): Promise<unknown> {
     const config = loadAppConfig();
     if (!config.aiConfigured) throw new AiNotConfiguredError();
-    const resolved = resolveChatProvider(config, schemaName);
+    const resolved = useGemini ? geminiChatProvider(config) : resolveChatProvider(config, schemaName);
     const response = await fetch(`${resolved.baseUrl}/chat/completions`, {
       method: "POST",
       headers: {
@@ -351,10 +352,16 @@ class OpenAiCompatibleProvider implements AiProvider {
     });
     if (!response.ok) {
       const detail = (await response.text().catch(() => "")).slice(0, 400);
+      // Groq's free tier caps tokens per minute; during a form fill several calls land at once.
+      // Switch to Gemini immediately instead of stalling the fill for ~15s per retry.
+      if (response.status === 429 && resolved.provider === "groq" && config.openaiConfigured) {
+        logInfo("ai.groq_rate_limited_fallback", { schemaName });
+        return this.chat(instruction, untrustedData, jsonMode, schemaName, 0, true);
+      }
       if (response.status === 429 && attempt < 3) {
         const waitMs = parseRateLimitWaitMs(detail, attempt);
         await sleep(waitMs);
-        return this.chat(instruction, untrustedData, jsonMode, schemaName, attempt + 1);
+        return this.chat(instruction, untrustedData, jsonMode, schemaName, attempt + 1, useGemini);
       }
       logError("ai.http_failed", {
         status: response.status,

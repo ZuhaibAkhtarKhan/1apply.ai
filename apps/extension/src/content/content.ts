@@ -45,6 +45,8 @@ type FillPayload = {
 const WIDGET_ATTR = "data-1apply-chip";
 const HIGHLIGHT_STYLE_ID = "oneapply-highlight-style";
 const TOAST_ATTR = "data-1apply-toast";
+/** Set on a file question once the extension has verified its upload (value = filename). */
+const APPLY_UPLOADED_ATTR = "data-1apply-uploaded";
 
 const root = globalThis as {
   __1APPLY_LISTENERS?: boolean;
@@ -947,8 +949,12 @@ if (!root.__1APPLY_LISTENERS) {
       await sleep(600);
     }
 
-    for (let attempt = 0; attempt < 8; attempt += 1) {
-      if (fileAlreadyUploaded(card, file.filename) || fileAlreadyUploaded(document, file.filename)) return true;
+    // The Google picker iframe can take several seconds to load, longer in a background tab.
+    for (let attempt = 0; attempt < 20; attempt += 1) {
+      if (fileAlreadyUploaded(card, file.filename) || fileAlreadyUploaded(document, file.filename)) {
+        markFileUploaded(card, file.filename);
+        return true;
+      }
       const inputs = Array.from(document.querySelectorAll<HTMLInputElement>('input[type="file"]'));
       for (const input of inputs) {
         if (applyFile(input, file)) return true;
@@ -959,10 +965,27 @@ if (!root.__1APPLY_LISTENERS) {
           resolve(Boolean(response && (response as { ok?: boolean }).ok));
         });
       });
-      if (ok) return true;
-      await sleep(350);
+      if (ok) return waitForGoogleUpload(card, file.filename);
+      await sleep(500);
     }
     return false;
+  }
+
+  /** After the picker takes the file, Google uploads it to Drive; wait until the form shows it. */
+  async function waitForGoogleUpload(card: HTMLElement, filename: string): Promise<boolean> {
+    for (let waited = 0; waited < 30_000; waited += 500) {
+      if (fileAlreadyUploaded(card, filename)) {
+        markFileUploaded(card, filename);
+        return true;
+      }
+      await sleep(500);
+    }
+    return false;
+  }
+
+  /** Remember a verified upload so the page audit doesn't treat the question as empty. */
+  function markFileUploaded(card: HTMLElement, filename: string) {
+    card.setAttribute(APPLY_UPLOADED_ATTR, normalizeFilename(filename));
   }
 
   function valueForNativeInput(el: HTMLInputElement | HTMLTextAreaElement, value: string): string | null {
@@ -1122,6 +1145,8 @@ if (!root.__1APPLY_LISTENERS) {
         document.querySelectorAll<HTMLInputElement>(`input[type="checkbox"][${APPLY_FIELD_ATTR}="${cssEscape(fieldKey)}"]`),
       ).some((node) => node.checked);
     }
+    const uploadedName = card.getAttribute(APPLY_UPLOADED_ATTR);
+    if (uploadedName && fileAlreadyUploaded(card, uploadedName)) return true;
     const file = card.querySelector<HTMLInputElement>('input[type="file"]');
     if (file) return (file.files?.length ?? 0) > 0 || fileAlreadyUploaded(card);
     if (el instanceof HTMLInputElement && el.type === "file") {
