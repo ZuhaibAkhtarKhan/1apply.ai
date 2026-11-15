@@ -1218,11 +1218,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
 
     if (message?.type === "ATTACH_FILE_ALL_FRAMES") {
-      const tab = await activeTab();
-      if (!tab.id) throw new Error("No active tab.");
+      // Host jobs fill in a background tab, so the active tab is usually 1-Apply itself.
+      // Always target the tab whose content script asked (that's where the Google picker opened).
+      const tabId = sender.tab?.id ?? (await activeTab()).id;
+      if (!tabId) throw new Error("No form tab.");
       const results = (await chrome.scripting.executeScript({
-        target: { tabId: tab.id, allFrames: true },
-        func: (file: { filename: string; mimeType: string; base64: string }) => {
+        target: { tabId, allFrames: true },
+        func: async (file: { filename: string; mimeType: string; base64: string }) => {
           const wanted = (file.filename || "").trim().toLowerCase().replace(/^.*[\\/]/, "");
           const inputs = Array.from(document.querySelectorAll<HTMLInputElement>('input[type="file"]'));
           let already = false;
@@ -1252,6 +1254,23 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             input.dispatchEvent(new Event("input", { bubbles: true }));
             input.dispatchEvent(new Event("change", { bubbles: true }));
             if ((input.files?.length ?? 0) > 0) ok = true;
+          }
+          // Some Google picker versions list the chosen file and wait for an "Upload" click.
+          // Only press it inside the picker frame — never anything on the form itself.
+          if (ok && location.hostname.endsWith("google.com") && location.pathname.startsWith("/picker")) {
+            for (let attempt = 0; attempt < 6; attempt += 1) {
+              await new Promise((resolve) => setTimeout(resolve, 500));
+              const uploadBtn = Array.from(document.querySelectorAll<HTMLElement>('button, [role="button"]')).find(
+                (node) =>
+                  /^upload$/i.test((node.getAttribute("aria-label") || node.textContent || "").trim()) &&
+                  node.getAttribute("aria-disabled") !== "true" &&
+                  !(node as HTMLButtonElement).disabled,
+              );
+              if (uploadBtn) {
+                uploadBtn.click();
+                break;
+              }
+            }
           }
           return ok;
         },
