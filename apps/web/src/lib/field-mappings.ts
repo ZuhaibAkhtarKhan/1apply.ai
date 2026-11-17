@@ -28,6 +28,8 @@ export function normalizeMappingIdentity(text: string): string {
     // Google Forms often concatenates "Comments" + "Your answer" → "CommentsYour answer"
     .replace(/your\s*answer/gi, " ")
     .replace(/\bthis is a required question\b/gi, " ")
+    // Checkbox/radio groups post as "name[]" — same question as "name".
+    .replace(/\[\s*\]/g, " ")
     .replace(/[*＊]+/g, " ")
     .replace(/[：:]+/g, " ")
     .replace(/[_/\\|]+/g, " ")

@@ -13,6 +13,34 @@ describe("field mapping identity", () => {
     expect(normalizeMappingIdentity("Email *")).toBe("email");
     expect(normalizeMappingIdentity("Comments CommentsYour answer")).toBe("comments");
     expect(normalizeMappingIdentity("Phone number")).toBe("phone number");
+    expect(normalizeMappingIdentity("product_usage[]")).toBe("product usage");
+  });
+
+  it("keeps the answered checkbox group when the host also captured name[]", () => {
+    const rows = dedupeFieldMappings([
+      {
+        id: "empty",
+        field_key: "f_f3ab9937",
+        label: "product_usage",
+        value: "",
+        source: "None",
+        confidence: 0,
+        excluded_by_default: true,
+        field_type: "checkbox",
+      },
+      {
+        id: "answered",
+        field_key: "f_2808144d",
+        label: "product_usage[]",
+        value: "ChatGPT",
+        source: "Needs You (this application only)",
+        confidence: 1,
+        field_type: "checkbox",
+      },
+    ]);
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.id).toBe("answered");
   });
 
   it("collapses Email * and Email into one autofill row", () => {
